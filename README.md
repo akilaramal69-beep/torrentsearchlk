@@ -65,6 +65,10 @@ By default, the app looks for Bitmagnet at `http://localhost:3333/graphql`.
    const API_URL = 'http://your-custom-ip:3333/graphql';
    ```
 
+## 📚 Guides
+- [VPS Deployment Guide](DEPLOYMENT.md) - How to set up on a VPS
+- [Domain Setup Guide](DOMAIN_SETUP.md) - How to configure a custom domain and SSL
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
