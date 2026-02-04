@@ -434,16 +434,28 @@ async function fetchTorrentFiles(infoHash) {
     if (data.errors) throw new Error(data.errors[0].message);
 
     const items = data.data?.torrentContent?.search?.items || [];
-    if (items.length === 0 || !items[0].torrent || !items[0].torrent.files) {
-        throw new Error('No files found for this torrent');
+    if (items.length === 0 || !items[0].torrent) {
+        throw new Error('Torrent metadata not found');
     }
 
+    // If files is null, it typically means it hasn't been crawled yet
     return items[0].torrent.files;
 }
 
 function renderFiles(files, container) {
-    if (!files || files.length === 0) {
-        container.innerHTML = '<div class="no-files">No file list available.</div>';
+    if (files === null) {
+        container.innerHTML = `
+            <div class="no-files">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <p>File list not yet indexed.</p>
+                <small>The crawler parses file lists in the background. Check back later.</small>
+            </div>
+        `;
+        return;
+    }
+
+    if (files.length === 0) {
+        container.innerHTML = '<div class="no-files">No files listed in this torrent.</div>';
         return;
     }
 
@@ -454,11 +466,12 @@ function renderFiles(files, container) {
     files.forEach(file => {
         const size = formatBytes(file.size);
         const iconClass = getFileIcon(file.path);
+        const fileName = file.path.split('/').pop();
 
         html += `
             <li class="file-item">
                 <i class="${iconClass}"></i>
-                <span class="file-path" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</span>
+                <span class="file-path" title="${escapeHtml(file.path)}">${escapeHtml(fileName)}</span>
                 <span class="file-size">${size}</span>
             </li>
         `;
