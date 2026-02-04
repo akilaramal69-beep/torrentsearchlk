@@ -51,9 +51,12 @@ async function performSearch() {
         const results = await searchTorrents(query, currentFilter);
         const endTime = performance.now();
 
-        lastResults = results;
-        displayResults(sortResults(results));
-        updateStats(results.length, Math.round(endTime - startTime));
+        // Client-side filtering by category
+        const filteredResults = filterByCategory(results, currentFilter);
+
+        lastResults = filteredResults;
+        displayResults(sortResults(filteredResults));
+        updateStats(filteredResults.length, Math.round(endTime - startTime));
     } catch (error) {
         console.error('Search failed:', error);
         resultsContainer.innerHTML = `
@@ -70,19 +73,13 @@ async function performSearch() {
     }
 }
 
-// GraphQL Query
+// GraphQL Query - fetch all results, filter client-side
 async function searchTorrents(searchTerm, category) {
-    // Build query with optional contentType filter
-    let queryInput = `queryString: $query, limit: 100`;
-    if (category !== 'all') {
-        queryInput += `, contentType: ${category.toUpperCase()}`;
-    }
-
     const graphqlQuery = {
         query: `
             query Search($query: String!) {
               torrentContent {
-                search(input: { ${queryInput} }) {
+                search(input: { queryString: $query, limit: 100 }) {
                   items {
                     infoHash
                     title
@@ -161,6 +158,30 @@ function sortResults(results) {
     }
 
     return sorted;
+}
+
+// Filter results by category (client-side)
+function filterByCategory(results, category) {
+    if (category === 'all') return results;
+
+    const categoryMap = {
+        'movie': 'movie',
+        'tv_show': 'tv_show',
+        'music': 'music',
+        'ebook': 'ebook',
+        'comic': 'comic',
+        'audiobook': 'audiobook',
+        'software': 'software',
+        'xxx': 'xxx'
+    };
+
+    const targetType = categoryMap[category];
+    if (!targetType) return results;
+
+    return results.filter(item => {
+        const itemType = (item.contentType || '').toLowerCase();
+        return itemType === targetType;
+    });
 }
 
 function displayResults(results) {
