@@ -394,7 +394,7 @@ window.toggleFiles = async (btn, infoHash, magnetLink) => {
             if (!files) {
                 console.log('Files not found in API, trying WebTorrent...');
                 filesContainer.innerHTML = '<div class="spinner-small"></div> Fetching metadata from DHT...';
-                files = await fetchFilesFromWebTorrent(magnetLink);
+                files = await fetchFilesFromWebTorrent(infoHash);
             }
 
             renderFiles(files, filesContainer, title);
@@ -408,8 +408,22 @@ window.toggleFiles = async (btn, infoHash, magnetLink) => {
     }
 };
 
-async function fetchFilesFromWebTorrent(magnetLink) {
+// WebSocket trackers for WebTorrent (browser-based)
+const WS_TRACKERS = [
+    'wss://tracker.openwebtorrent.com',
+    'wss://tracker.btorrent.xyz',
+    'wss://tracker.webtorrent.dev',
+    'wss://tracker.files.fm:7073/announce',
+    'wss://peertube.cpy.re/tracker/socket',
+    'wss://open.weissbier.gerbsen.de:443/announce'
+];
+
+async function fetchFilesFromWebTorrent(infoHash) {
     if (!window.WebTorrent) return null;
+
+    // Construct magnet link with WS trackers
+    const trackers = WS_TRACKERS.map(tr => `&tr=${encodeURIComponent(tr)}`).join('');
+    const magnetUri = `magnet:?xt=urn:btih:${infoHash}${trackers}`;
 
     return new Promise((resolve, reject) => {
         const client = new WebTorrent();
@@ -418,7 +432,7 @@ async function fetchFilesFromWebTorrent(magnetLink) {
             resolve(null);
         }, 15000); // 15s timeout
 
-        client.add(magnetLink, (torrent) => {
+        client.add(magnetUri, (torrent) => {
             clearTimeout(timeout);
             const files = torrent.files.map(f => ({
                 path: f.path,
