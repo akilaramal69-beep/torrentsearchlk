@@ -547,9 +547,7 @@ header {
 
 .file-path {
     flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-all;
     margin-right: 1rem;
 }
 
