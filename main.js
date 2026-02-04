@@ -257,10 +257,14 @@ function displayResults(results) {
                 </div>
             </div>
             <div class="result-actions">
+                <button class="files-btn" onclick="toggleFiles(this, '${item.infoHash}')" title="View Files">
+                    <i class="fa-solid fa-folder"></i> Files
+                </button>
                 <button class="magnet-btn" onclick="copyMagnet(this, '${magnetLink}')" title="Copy Magnet Link">
-                    <i class="fa-solid fa-magnet"></i>
+                    <i class="fa-solid fa-magnet"></i> Magnet
                 </button>
             </div>
+            <div class="files-container hidden"></div>
         `;
         resultsContainer.appendChild(card);
     });
@@ -359,6 +363,123 @@ window.copyMagnet = async (btn, link) => {
         window.open(link, '_blank');
     }
 };
+
+window.toggleFiles = async (btn, infoHash) => {
+    const card = btn.closest('.result-card');
+    const filesContainer = card.querySelector('.files-container');
+    const icon = btn.querySelector('i');
+
+    // If already open, close it
+    if (!filesContainer.classList.contains('hidden')) {
+        filesContainer.classList.add('hidden');
+        btn.classList.remove('active');
+        icon.className = 'fa-solid fa-folder';
+        return;
+    }
+
+    // Open it
+    filesContainer.classList.remove('hidden');
+    btn.classList.add('active');
+    icon.className = 'fa-solid fa-folder-open';
+
+    // If not loaded yet, fetch
+    if (!filesContainer.dataset.loaded) {
+        filesContainer.innerHTML = '<div class="spinner-small"></div> Loading files...';
+
+        try {
+            const files = await fetchTorrentFiles(infoHash);
+            renderFiles(files, filesContainer);
+            filesContainer.dataset.loaded = 'true';
+        } catch (error) {
+            console.error('Failed to load files:', error);
+            filesContainer.innerHTML = `<div class="error-msg"><i class="fa-solid fa-exclamation-circle"></i> Failed to load files: ${error.message}</div>`;
+        }
+    }
+};
+
+async function fetchTorrentFiles(infoHash) {
+    const graphqlQuery = {
+        query: `
+            query GetFiles($infoHash: String!) {
+              torrentContent {
+                search(input: { queryString: $infoHash, limit: 1 }) {
+                  items {
+                    torrent {
+                      files {
+                        path
+                        size
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        `,
+        variables: {
+            infoHash: infoHash
+        }
+    };
+
+    const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify(graphqlQuery)
+    });
+
+    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    const data = await response.json();
+    if (data.errors) throw new Error(data.errors[0].message);
+
+    const items = data.data?.torrentContent?.search?.items || [];
+    if (items.length === 0 || !items[0].torrent || !items[0].torrent.files) {
+        throw new Error('No files found for this torrent');
+    }
+
+    return items[0].torrent.files;
+}
+
+function renderFiles(files, container) {
+    if (!files || files.length === 0) {
+        container.innerHTML = '<div class="no-files">No file list available.</div>';
+        return;
+    }
+
+    // Sort files by path
+    files.sort((a, b) => a.path.localeCompare(b.path));
+
+    let html = '<ul class="file-list">';
+    files.forEach(file => {
+        const size = formatBytes(file.size);
+        const iconClass = getFileIcon(file.path);
+
+        html += `
+            <li class="file-item">
+                <i class="${iconClass}"></i>
+                <span class="file-path" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</span>
+                <span class="file-size">${size}</span>
+            </li>
+        `;
+    });
+    html += '</ul>';
+    container.innerHTML = html;
+}
+
+function getFileIcon(path) {
+    const ext = path.split('.').pop().toLowerCase();
+    if (['mkv', 'mp4', 'avi', 'mov', 'wmv', 'webm'].includes(ext)) return 'fa-solid fa-file-video';
+    if (['mp3', 'flac', 'wav', 'aac', 'ogg', 'm4a'].includes(ext)) return 'fa-solid fa-file-audio';
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)) return 'fa-solid fa-file-image';
+    if (['sub', 'srt', 'vtt', 'ass'].includes(ext)) return 'fa-solid fa-closed-captioning';
+    if (['iso', 'img', 'bin', 'dmg'].includes(ext)) return 'fa-solid fa-compact-disc';
+    if (['rar', 'zip', '7z', 'tar', 'gz', 'bz2', 'xz'].includes(ext)) return 'fa-solid fa-file-zipper';
+    if (['exe', 'msi', 'bat', 'sh'].includes(ext)) return 'fa-brands fa-windows'; // Or terminal
+    if (['pdf', 'epub', 'mobi', 'cbz', 'cbr'].includes(ext)) return 'fa-solid fa-book';
+    if (['nfo', 'txt', 'md'].includes(ext)) return 'fa-solid fa-file-lines';
+    return 'fa-solid fa-file';
+}
 
 function showToast() {
     toast.classList.add('show');
