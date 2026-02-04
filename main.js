@@ -257,7 +257,7 @@ function displayResults(results) {
                 </div>
             </div>
             <div class="result-actions">
-                <button class="magnet-btn" onclick="copyMagnet('${magnetLink}')" title="Copy Magnet Link">
+                <button class="magnet-btn" onclick="copyMagnet(this, '${magnetLink}')" title="Copy Magnet Link">
                     <i class="fa-solid fa-magnet"></i>
                 </button>
             </div>
@@ -334,10 +334,25 @@ function getTypeClass(contentType) {
 }
 
 // Global scope for onclick
-window.copyMagnet = async (link) => {
+window.copyMagnet = async (btn, link) => {
     try {
         await navigator.clipboard.writeText(link);
+
+        // Add animation class
+        btn.classList.add('clicked');
+
+        // Change icon temporarily
+        const icon = btn.querySelector('i');
+        icon.className = 'fa-solid fa-check';
+
         showToast();
+
+        // Reset after animation
+        setTimeout(() => {
+            btn.classList.remove('clicked');
+            icon.className = 'fa-solid fa-magnet';
+        }, 1500);
+
     } catch (err) {
         console.error('Failed to copy API link', err);
         // Fallback or open directly

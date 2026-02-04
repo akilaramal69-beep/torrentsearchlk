@@ -314,9 +314,33 @@ header {
     color: #f87171;
 }
 
-.type-unknown {
-    background: rgba(148, 163, 184, 0.2);
-    color: #94a3b8;
+/* Magnet button click animation */
+@keyframes magnetClick {
+    0% {
+        transform: scale(1);
+    }
+
+    40% {
+        transform: scale(0.8);
+    }
+
+    80% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.magnet-btn.clicked {
+    animation: magnetClick 0.4s ease-out;
+    background: var(--primary);
+    color: white;
+}
+
+.magnet-btn.clicked i {
+    transform: scale(1.2);
 }
 
 .result-meta {
