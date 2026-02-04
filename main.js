@@ -257,7 +257,7 @@ function displayResults(results) {
                 </div>
             </div>
             <div class="result-actions">
-                <button class="files-btn" onclick="toggleFiles(this, '${item.infoHash}', '${magnetLink}')" title="View Files">
+                <button class="files-btn" onclick="toggleFiles(this, '${item.infoHash}')" title="View Files">
                     <i class="fa-solid fa-folder"></i> Files
                 </button>
                 <button class="magnet-btn" onclick="copyMagnet(this, '${magnetLink}')" title="Copy Magnet Link">
@@ -364,7 +364,7 @@ window.copyMagnet = async (btn, link) => {
     }
 };
 
-window.toggleFiles = async (btn, infoHash, magnetLink) => {
+window.toggleFiles = async (btn, infoHash) => {
     const card = btn.closest('.result-card');
     const filesContainer = card.querySelector('.files-container');
     const icon = btn.querySelector('i');
@@ -385,18 +385,10 @@ window.toggleFiles = async (btn, infoHash, magnetLink) => {
 
     // If not loaded yet, fetch
     if (!filesContainer.dataset.loaded) {
-        filesContainer.innerHTML = '<div class="spinner-small"></div> Loading files (this may take a moment)...';
+        filesContainer.innerHTML = '<div class="spinner-small"></div> Loading files...';
 
         try {
-            // First try API, then fallback to WebTorrent
-            let files = await fetchTorrentFiles(infoHash);
-
-            if (!files) {
-                console.log('Files not found in API, trying WebTorrent...');
-                filesContainer.innerHTML = '<div class="spinner-small"></div> Fetching metadata from DHT...';
-                files = await fetchFilesFromWebTorrent(infoHash);
-            }
-
+            const files = await fetchTorrentFiles(infoHash);
             renderFiles(files, filesContainer, title);
             filesContainer.dataset.loaded = 'true';
         } catch (error) {
@@ -408,55 +400,12 @@ window.toggleFiles = async (btn, infoHash, magnetLink) => {
     }
 };
 
-// WebSocket trackers for WebTorrent (browser-based)
-const WS_TRACKERS = [
-    'wss://tracker.openwebtorrent.com',
-    'wss://tracker.btorrent.xyz',
-    'wss://tracker.webtorrent.dev',
-    'wss://tracker.files.fm:7073/announce',
-    'wss://peertube.cpy.re/tracker/socket',
-    'wss://open.weissbier.gerbsen.de:443/announce'
-];
-
-async function fetchFilesFromWebTorrent(infoHash) {
-    if (!window.WebTorrent) return null;
-
-    // Construct magnet link with WS trackers
-    const trackers = WS_TRACKERS.map(tr => `&tr=${encodeURIComponent(tr)}`).join('');
-    const magnetUri = `magnet:?xt=urn:btih:${infoHash}${trackers}`;
-
-    return new Promise((resolve, reject) => {
-        const client = new WebTorrent();
-        const timeout = setTimeout(() => {
-            client.destroy();
-            resolve(null);
-        }, 15000); // 15s timeout
-
-        client.add(magnetUri, (torrent) => {
-            clearTimeout(timeout);
-            const files = torrent.files.map(f => ({
-                path: f.path,
-                size: f.length
-            }));
-            client.destroy();
-            resolve(files);
-        });
-
-        client.on('error', (err) => {
-            clearTimeout(timeout);
-            client.destroy();
-            console.error("WebTorrent error:", err);
-            resolve(null);
-        });
-    });
-}
-
 async function fetchTorrentFiles(infoHash) {
     const graphqlQuery = {
         query: `
             query GetFiles($infoHash: String!) {
               torrentContent {
-                search(input: { queryString: $infoHash, limit: 1 }) {
+                search(input: { infoHashes: ["${infoHash}"], limit: 1 }) {
                   items {
                     torrent {
                       files {
@@ -532,7 +481,7 @@ function renderFiles(files, container, fallbackTitle) {
     files.forEach(file => {
         const size = formatBytes(file.size);
         const iconClass = getFileIcon(file.path);
-        const fileName = file.path.split('/').pop();
+        const fileName = file.path;
 
         html += `
             <li class="file-item">
