@@ -1,7 +1,14 @@
 {$DOMAIN_NAME} {
-    # Proxy /graphql directly to the backend
-    reverse_proxy /graphql bitmagnet:3333
+    log {
+        output stdout
+        format json
+    }
 
-    # All other requests go to the frontend web UI
-    reverse_proxy web:80
+    handle /graphql* {
+        reverse_proxy bitmagnet:3333
+    }
+
+    handle {
+        reverse_proxy web:80
+    }
 }
