@@ -72,13 +72,17 @@ async function performSearch() {
 
 // GraphQL Query
 async function searchTorrents(searchTerm, category) {
-    // Note: This query structure assumes standard Bitmagnet schema.
-    // We might need to adjust based on specific version.
+    // Build query with optional contentType filter
+    let queryInput = `queryString: $query, limit: 100`;
+    if (category !== 'all') {
+        queryInput += `, contentType: ${category.toUpperCase()}`;
+    }
+
     const graphqlQuery = {
         query: `
             query Search($query: String!) {
               torrentContent {
-                search(input: { queryString: $query, limit: 100 }) {
+                search(input: { ${queryInput} }) {
                   items {
                     infoHash
                     title
@@ -96,7 +100,7 @@ async function searchTorrents(searchTerm, category) {
             }
         `,
         variables: {
-            query: category === 'all' ? searchTerm : `${searchTerm} ${category}`
+            query: searchTerm
         }
     };
 
@@ -177,12 +181,17 @@ function displayResults(results) {
         const magnetLink = item.torrent?.magnetUri || `magnet:?xt=urn:btih:${item.infoHash}&dn=${encodeURIComponent(item.title)}`;
         const date = item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'N/A';
         const size = formatBytes(item.torrent?.size || 0);
+        const typeLabel = getTypeLabel(item.contentType);
+        const typeClass = getTypeClass(item.contentType);
 
         const card = document.createElement('div');
         card.className = 'result-card';
         card.innerHTML = `
             <div class="result-info">
-                <h3>${escapeHtml(item.title)}</h3>
+                <div class="result-header">
+                    <span class="type-badge ${typeClass}">${typeLabel}</span>
+                    <h3>${escapeHtml(item.title)}</h3>
+                </div>
                 <div class="result-meta">
                     <span class="meta-item size" title="Size">
                         <i class="fa-solid fa-hard-drive"></i> ${size}
@@ -242,6 +251,37 @@ function escapeHtml(unsafe) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// Content type helpers
+function getTypeLabel(contentType) {
+    const labels = {
+        'MOVIE': 'Movie',
+        'TV_SHOW': 'TV Show',
+        'MUSIC': 'Music',
+        'EBOOK': 'E-Book',
+        'COMIC': 'Comic',
+        'AUDIOBOOK': 'Audiobook',
+        'SOFTWARE': 'Software',
+        'GAME': 'Game',
+        'XXX': 'XXX'
+    };
+    return labels[contentType] || contentType || 'Unknown';
+}
+
+function getTypeClass(contentType) {
+    const classes = {
+        'MOVIE': 'type-movie',
+        'TV_SHOW': 'type-tv',
+        'MUSIC': 'type-music',
+        'EBOOK': 'type-book',
+        'COMIC': 'type-book',
+        'AUDIOBOOK': 'type-audio',
+        'SOFTWARE': 'type-software',
+        'GAME': 'type-game',
+        'XXX': 'type-xxx'
+    };
+    return classes[contentType] || 'type-unknown';
 }
 
 // Global scope for onclick
