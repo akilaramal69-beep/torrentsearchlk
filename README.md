@@ -8,71 +8,56 @@ A clean, fast, and modern web interface for your self-hosted [Bitmagnet](https:/
 
 - 🚀 **Fast Search**: Direct client-side connection to Bitmagnet GraphQL API.
 - 🎨 **Modern UI**: Clean dark theme with glassmorphism and responsiveness.
-- 🐳 **Docker Ready**: Includes simple Docker setup for easy deployment.
+- 🔒 **Secure**: Automatic SSL/TLS with Caddy.
+- 🐳 **Docker Ready**: One-command deployment.
 - 🧲 **One-Click**: Copy magnet links instantly.
 - 🔍 **Filters**: Filter by content type (Video, Audio, Apps, Games).
 
-## 🛠️ Quick Start
+## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
+### 1. Clone & Setup
+```bash
+git clone https://github.com/akilaramal69-beep/torrentsearchlk.git
+cd torrentsearchlk
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/akilaramal69-beep/torrentsearchlk.git
-   cd torrentsearchlk
-   ```
+### 2. Configure Environment
+Copy the example configuration file:
+```bash
+cp .env.example .env
+```
+Edit `.env` to set your domain and backend URL:
+```bash
+nano .env
+```
+**Important Settings:**
+- `DOMAIN_NAME`: Your domain (e.g., `search.mysite.com`) or `:80` for local/IP usage.
+- `BITMAGNET_URL`: The URL where your Bitmagnet instance is running (e.g., `http://my-vps-ip:3333`).
 
-2. **Run with Docker Compose**
-   ```bash
-   docker-compose up -d
-   ```
+### 3. Run
+```bash
+docker compose up -d
+```
+Visit your site at `http://your-domain` (or `https://` if domain is configured).
 
-3. **Access the UI**
-   Open [http://localhost:8080](http://localhost:8080) in your browser.
+## ⚙️ Configuration Details
 
-> **Note**: By default, it expects Bitmagnet to be running at `http://localhost:3333`.
+The application is configured entirely via the `.env` file.
 
-### Option 2: Run Locally (Node.js)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DOMAIN_NAME` | The public domain for Caddy to secure. Use `:80` if using IP only. | `:80` |
+| `BITMAGNET_URL` | The URL of your Bitmagnet GraphQL API. | `http://localhost:3333` |
 
-1. **Install dependencies** (optional, just for serving)
-   ```bash
-   npm install -g serve
-   ```
+## 📚 Documentation
+- [VPS Deployment Guide](DEPLOYMENT.md) - Detailed VPS setup instructions.
+- [Domain Setup Guide](DOMAIN_SETUP.md) - How to configure DNS and SSL.
 
-2. **Serve the app**
-   ```bash
-   serve .
-   ```
-
-## ⚙️ Configuration
-
-### Configuration
-
-1. **Copy the example env file:**
-   ```bash
-   cp .env.example .env
-   ```
-2. **Edit `.env`:**
-   ```bash
-   nano .env
-   ```
-   Set your `DOMAIN_NAME` (e.g., `search.yourdomain.com`) and `BITMAGNET_URL`.
-
-3. **Restart containers:**
-   ```bash
-   docker-compose down
-   docker-compose up -d
-   ```
-
-2. **Manual**: Edit `main.js` (line 3):
-   ```javascript
-   const API_URL = 'http://your-custom-ip:3333/graphql';
-   ```
-
-## 📚 Guides
-- [VPS Deployment Guide](DEPLOYMENT.md) - How to set up on a VPS
-- [Domain Setup Guide](DOMAIN_SETUP.md) - How to configure a custom domain and SSL
+## 🛠️ Local Development (No Docker)
+To run just the frontend locally without Docker:
+1. Install a static file server: `npm install -g serve`
+2. Run: `serve .`
+3. Edit `main.js` manually to point to your Bitmagnet instance if needed.
 
 ## 🤝 Contributing
-
 Contributions are welcome! Please feel free to submit a Pull Request.
