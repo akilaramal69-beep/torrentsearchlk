@@ -1,6 +1,5 @@
-// Configuration - Update this to point to your Bitmagnet instance if different
-// Defaults to the same host/port if not specified
-const API_URL = 'http://localhost:3333/graphql'; 
+// Configuration - Uses relative path via Caddy proxy
+const API_URL = '/graphql';
 
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
@@ -41,7 +40,7 @@ async function performSearch() {
     try {
         const results = await searchTorrents(query, currentFilter);
         const endTime = performance.now();
-        
+
         displayResults(results);
         updateStats(results.length, Math.round(endTime - startTime));
     } catch (error) {
@@ -106,7 +105,7 @@ async function searchTorrents(searchTerm, category) {
     }
 
     const data = await response.json();
-    
+
     if (data.errors) {
         throw new Error(data.errors[0].message);
     }
