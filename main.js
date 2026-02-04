@@ -71,13 +71,19 @@ async function searchTorrents(searchTerm, category) {
                   items {
                     infoHash
                     title
+                    seeders
+                    leechers
+                    publishedAt
+                    torrent {
+                      size
+                      magnetUri
+                    }
                   }
                 }
               }
             }
         `,
         variables: {
-            // Bitmagnet expects an input object with queryString
             query: category === 'all' ? searchTerm : `${searchTerm} ${category}`
         }
     };
@@ -125,9 +131,9 @@ function displayResults(results) {
     }
 
     results.forEach(item => {
-        const magnetLink = `magnet:?xt=urn:btih:${item.infoHash}&dn=${encodeURIComponent(item.title)}`;
-        const date = new Date(item.publishedAt).toLocaleDateString();
-        const size = formatBytes(item.fileSize);
+        const magnetLink = item.torrent?.magnetUri || `magnet:?xt=urn:btih:${item.infoHash}&dn=${encodeURIComponent(item.title)}`;
+        const date = item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : 'N/A';
+        const size = formatBytes(item.torrent?.size || 0);
 
         const card = document.createElement('div');
         card.className = 'result-card';
