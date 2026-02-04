@@ -40,14 +40,24 @@ docker compose up -d
 ```
 Visit your site at `http://your-domain` (or `https://` if domain is configured).
 
-## ⚙️ Configuration Details
+## ⚙️ Configuration details
 
-The application is configured entirely via the `.env` file.
+The application uses an all-in-one Docker setup.
+
+### Environment Variables (.env)
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DOMAIN_NAME` | The public domain for Caddy to secure. Use `:80` if using IP only. | `:80` |
-| `BITMAGNET_URL` | The URL of your Bitmagnet GraphQL API. | `http://localhost:3333` |
+| `DOMAIN_NAME` | Domain for the application (or :80). | `:80` |
+| `POSTGRES_PASSWORD` | Password for the database. | `postgrespassword` |
+| `TMDB_API_KEY` | Optional: Key for fetching movie/show metadata. | `` |
+
+### Services
+- **Web**: Front-end UI (Port 80/443 via Caddy).
+- **Bitmagnet**: Backend API (Port 3333).
+- **Postgres**: Database.
+- **Redis**: Cache/Queue.
+
 
 ## 📚 Documentation
 - [VPS Deployment Guide](DEPLOYMENT.md) - Detailed VPS setup instructions.

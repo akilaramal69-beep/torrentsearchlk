@@ -1,14 +1,18 @@
 version: '3.8'
 
 services:
+  # --- Frontend ---
   web:
     build: .
     environment:
-      - BITMAGNET_URL=${BITMAGNET_URL:-http://localhost:3333}
+      - BITMAGNET_URL=${BITMAGNET_URL:-http://bitmagnet:3333}
     restart: unless-stopped
     expose:
       - "80"
+    depends_on:
+      - bitmagnet
 
+  # --- Reverse Proxy ---
   caddy:
     image: caddy:latest
     restart: unless-stopped
@@ -24,6 +28,57 @@ services:
     depends_on:
       - web
 
+  # --- Bitmagnet Backend ---
+  bitmagnet:
+    image: ghcr.io/bitmagnet-io/bitmagnet:latest
+    restart: unless-stopped
+    ports:
+      - "3333:3333" # Access backend directly if needed
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgrespassword}
+      - POSTGRES_DB=${POSTGRES_DB:-bitmagnet}
+      - REDIS_ADDR=redis:6379
+      - TMDB_API_KEY=${TMDB_API_KEY}
+    command: 
+      - worker
+      - run
+      - --keys=http_server
+      - --keys=queue_server
+      - --keys=hydrator # Enable metadata hydration
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # --- Database ---
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgrespassword}
+      - POSTGRES_DB=${POSTGRES_DB:-bitmagnet}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Cache ---
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
 volumes:
   caddy_data:
   caddy_config:
+  postgres_data:
+  redis_data:
