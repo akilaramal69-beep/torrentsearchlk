@@ -187,14 +187,29 @@ function filterByCategory(results, category) {
 
 // Filter results to only include titles that contain search terms
 function filterBySearchTerms(results, searchQuery) {
-    const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+    // Normalize search query: handle special chars, keep Unicode letters
+    const normalizedQuery = normalizeText(searchQuery);
+    const searchWords = normalizedQuery.split(/\s+/).filter(w => w.length > 1);
     if (searchWords.length === 0) return results;
 
     return results.filter(item => {
-        const title = (item.title || '').toLowerCase();
+        const normalizedTitle = normalizeText(item.title || '');
         // Title must contain at least one search word
-        return searchWords.some(word => title.includes(word));
+        return searchWords.some(word => normalizedTitle.includes(word));
     });
+}
+
+// Normalize text for comparison: handle dots, special chars, Unicode
+function normalizeText(text) {
+    return text
+        .toLowerCase()
+        // Replace dots, underscores, dashes with spaces (common in torrent names)
+        .replace(/[._\-]/g, ' ')
+        // Remove brackets and parentheses content markers but keep content
+        .replace(/[\[\](){}]/g, ' ')
+        // Normalize multiple spaces
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function displayResults(results) {
