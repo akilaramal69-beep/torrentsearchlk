@@ -15,6 +15,8 @@ const sortSelect = document.getElementById('sortSelect');
 let currentFilter = 'all';
 let currentSort = 'relevance';
 let lastResults = [];
+let currentPage = 1;
+const itemsPerPage = 50;
 
 // Event Listeners
 searchBtn.addEventListener('click', performSearch);
@@ -40,9 +42,11 @@ sortSelect.addEventListener('change', () => {
     }
 });
 
-async function performSearch() {
+async function performSearch(resetPage = true) {
     const query = searchInput.value.trim();
     if (!query) return;
+
+    if (resetPage) currentPage = 1;
 
     showLoading(true);
     const startTime = performance.now();
@@ -52,15 +56,17 @@ async function performSearch() {
 
     showLoading(true);
     try {
-        const results = await searchTorrents(broadQuery, currentFilter);
+        const offset = (currentPage - 1) * itemsPerPage;
+        const results = await searchTorrents(broadQuery, currentFilter, itemsPerPage, offset);
         const endTime = performance.now();
 
-        // Client-side filtering: by category only (server-side handles keywords)
+        // Client-side filtering on the current page of results
         const filteredResults = filterByCategory(results, currentFilter);
 
         lastResults = filteredResults;
         displayResults(sortResults(filteredResults));
         updateStats(filteredResults.length, Math.round(endTime - startTime));
+        renderPagination();
     } catch (error) {
         console.error('Search failed:', error);
         resultsContainer.innerHTML = `
@@ -77,13 +83,13 @@ async function performSearch() {
     }
 }
 
-// GraphQL Query - fetch all results, filter client-side
-async function searchTorrents(searchTerm, category) {
+// GraphQL Query - fetch paginated results
+async function searchTorrents(searchTerm, category, limit = 50, offset = 0) {
     const graphqlQuery = {
         query: `
-            query Search($query: String!) {
+            query Search($query: String!, $limit: Int, $offset: Int) {
               torrentContent {
-                search(input: { queryString: $query, limit: 100 }) {
+                search(input: { queryString: $query, limit: $limit, offset: $offset }) {
                   items {
                     infoHash
                     title
@@ -102,7 +108,9 @@ async function searchTorrents(searchTerm, category) {
             }
         `,
         variables: {
-            query: searchTerm
+            query: searchTerm,
+            limit: limit,
+            offset: offset
         }
     };
 
@@ -245,6 +253,38 @@ function displayResults(results) {
         resultsContainer.appendChild(card);
     });
 }
+
+function renderPagination() {
+    const existingPagination = document.getElementById('pagination');
+    if (existingPagination) existingPagination.remove();
+
+    if (lastResults.length === 0 && currentPage === 1) return;
+
+    const paginationDiv = document.createElement('div');
+    paginationDiv.id = 'pagination';
+    paginationDiv.className = 'pagination-container';
+
+    paginationDiv.innerHTML = `
+        <button class="page-btn" onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fa-solid fa-chevron-left"></i> Previous
+        </button>
+        <span class="page-info">Page ${currentPage}</span>
+        <button class="page-btn" onclick="changePage(1)" ${lastResults.length < itemsPerPage ? 'disabled' : ''}>
+            Next <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    `;
+
+    resultsContainer.parentNode.insertBefore(paginationDiv, resultsContainer.nextSibling);
+
+    // If we have 0 results on a non-first page, we might want to allow going back, 
+    // but the above disabled check handles next button.
+}
+
+window.changePage = (direction) => {
+    currentPage += direction;
+    performSearch(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function updateStats(count, time) {
     resultCountSpan.textContent = count;
