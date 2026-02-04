@@ -47,6 +47,7 @@ services:
       - run
       - --keys=http_server
       - --keys=queue_server
+      - --keys=dht_crawler
     depends_on:
       postgres:
         condition: service_healthy
