@@ -47,7 +47,6 @@ services:
       - run
       - --keys=http_server
       - --keys=queue_server
-      - --keys=hydrator # Enable metadata hydration
     depends_on:
       postgres:
         condition: service_healthy
