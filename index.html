@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,9 +12,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="background-glob"></div>
-    
+
     <div class="container">
         <header>
             <div class="logo">
@@ -40,7 +42,7 @@
             <div id="stats" class="stats hidden">
                 Found <span id="resultCount">0</span> results in <span id="searchTime">0</span>ms
             </div>
-            
+
             <div id="results" class="results-grid">
                 <!-- Results will be injected here -->
                 <div class="empty-state">
@@ -49,7 +51,7 @@
                     <p>Enter a query above to explore the Bitmagnet database.</p>
                 </div>
             </div>
-            
+
             <div id="loading" class="loading hidden">
                 <div class="spinner"></div>
             </div>
@@ -63,6 +65,7 @@
     <!-- Magnet Link Toast -->
     <div id="toast" class="toast hidden">Magnet link copied to clipboard!</div>
 
-    <script type="module" src="main.js"></script>
+    <script type="module" src="main.js?v=2"></script>
 </body>
+
 </html>
