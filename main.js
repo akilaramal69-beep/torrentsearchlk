@@ -71,11 +71,6 @@ async function searchTorrents(searchTerm, category) {
                   items {
                     infoHash
                     title
-                    fileSize
-                    seeders
-                    leechers
-                    publishedAt
-                    magnetLink: infoHash
                   }
                 }
               }
