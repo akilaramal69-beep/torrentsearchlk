@@ -3,8 +3,27 @@ version: '3.8'
 services:
   web:
     build: .
-    ports:
-      - "8080:80"
     environment:
-      - BITMAGNET_URL=http://localhost:3333
+      - BITMAGNET_URL=${BITMAGNET_URL:-http://localhost:3333}
     restart: unless-stopped
+    expose:
+      - "80"
+
+  caddy:
+    image: caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-:80}
+    depends_on:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:

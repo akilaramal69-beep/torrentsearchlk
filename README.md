@@ -46,18 +46,22 @@ A clean, fast, and modern web interface for your self-hosted [Bitmagnet](https:/
 
 ## ⚙️ Configuration
 
-### Changing Bitmagnet URL
+### Configuration
 
-By default, the app looks for Bitmagnet at `http://localhost:3333/graphql`.
+1. **Copy the example env file:**
+   ```bash
+   cp .env.example .env
+   ```
+2. **Edit `.env`:**
+   ```bash
+   nano .env
+   ```
+   Set your `DOMAIN_NAME` (e.g., `search.yourdomain.com`) and `BITMAGNET_URL`.
 
-**To change this:**
-
-1. **Docker**: Edit `docker-compose.yml`:
-   ```yaml
-   services:
-     web:
-       environment:
-         - BITMAGNET_URL=http://your-server-ip:3333
+3. **Restart containers:**
+   ```bash
+   docker-compose down
+   docker-compose up -d
    ```
 
 2. **Manual**: Edit `main.js` (line 3):

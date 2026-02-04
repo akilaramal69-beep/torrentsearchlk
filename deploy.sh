@@ -39,11 +39,18 @@ else
     cd torrentsearchlk
 fi
 
-# 5. Start Application
-echo "🚀 Starting container..."
+# 5. Setup Environment
+if [ ! -f .env ]; then
+    echo "📝 Creating .env file..."
+    cp .env.example .env
+    echo "⚠️  IMPORTANT: Please edit the .env file with your domain name!"
+    echo "    Run: nano .env"
+fi
+
+# 6. Start Application
+echo "🚀 Starting containers..."
 docker compose up -d --build
 
 echo ""
 echo "✅ Deployment complete!"
-echo "🌍 App should be running at: http://$(curl -s ifconfig.me):8080"
-echo "ℹ️  Make sure port 8080 is open in your firewall."
+echo "ℹ️  Edit .env to set your domain, then restart containers."
