@@ -51,9 +51,8 @@ async function performSearch() {
         const results = await searchTorrents(query, currentFilter);
         const endTime = performance.now();
 
-        // Client-side filtering: by search terms, then by category
-        const matchedResults = filterBySearchTerms(results, query);
-        const filteredResults = filterByCategory(matchedResults, currentFilter);
+        // Client-side filtering: by category only (server-side handles keywords)
+        const filteredResults = filterByCategory(results, currentFilter);
 
         lastResults = filteredResults;
         displayResults(sortResults(filteredResults));
@@ -186,32 +185,7 @@ function filterByCategory(results, category) {
     });
 }
 
-// Filter results to only include titles that contain search terms
-function filterBySearchTerms(results, searchQuery) {
-    // Normalize search query: handle special chars, keep Unicode letters
-    const normalizedQuery = normalizeText(searchQuery);
-    const searchWords = normalizedQuery.split(/\s+/).filter(w => w.length > 1);
-    if (searchWords.length === 0) return results;
 
-    return results.filter(item => {
-        const normalizedTitle = normalizeText(item.title || '');
-        // Title must contain at least one search word
-        return searchWords.some(word => normalizedTitle.includes(word));
-    });
-}
-
-// Normalize text for comparison: handle dots, special chars, Unicode
-function normalizeText(text) {
-    return text
-        .toLowerCase()
-        // Replace dots, underscores, dashes with spaces (common in torrent names)
-        .replace(/[._\-]/g, ' ')
-        // Remove brackets and parentheses content markers but keep content
-        .replace(/[\[\](){}]/g, ' ')
-        // Normalize multiple spaces
-        .replace(/\s+/g, ' ')
-        .trim();
-}
 
 function displayResults(results) {
     resultsContainer.innerHTML = '';
