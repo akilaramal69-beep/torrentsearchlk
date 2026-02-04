@@ -67,7 +67,7 @@ async function searchTorrents(searchTerm, category) {
         query: `
             query Search($query: String!) {
               torrentContent {
-                search(query: $query) {
+                search(input: { queryString: $query }) {
                   items {
                     infoHash
                     title
@@ -82,8 +82,7 @@ async function searchTorrents(searchTerm, category) {
             }
         `,
         variables: {
-            // Adding simple category filter to query string if not 'all'
-            // This is a naive implementation; proper filtering depends on API capabilities
+            // Bitmagnet expects an input object with queryString
             query: category === 'all' ? searchTerm : `${searchTerm} ${category}`
         }
     };
