@@ -47,8 +47,12 @@ async function performSearch() {
     showLoading(true);
     const startTime = performance.now();
 
+    // Prepare broader query: append wildcard * to each term for partial matching
+    const broadQuery = query.split(/\s+/).map(word => `${word}*`).join(' ');
+
+    showLoading(true);
     try {
-        const results = await searchTorrents(query, currentFilter);
+        const results = await searchTorrents(broadQuery, currentFilter);
         const endTime = performance.now();
 
         // Client-side filtering: by category only (server-side handles keywords)
