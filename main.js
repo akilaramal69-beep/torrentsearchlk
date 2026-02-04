@@ -257,7 +257,7 @@ function displayResults(results) {
                 </div>
             </div>
             <div class="result-actions">
-                <button class="files-btn" onclick="toggleFiles(this, '${item.infoHash}')" title="View Files">
+                <button class="files-btn" onclick="toggleFiles(this, '${item.infoHash}', '${magnetLink}')" title="View Files">
                     <i class="fa-solid fa-folder"></i> Files
                 </button>
                 <button class="magnet-btn" onclick="copyMagnet(this, '${magnetLink}')" title="Copy Magnet Link">
@@ -364,7 +364,7 @@ window.copyMagnet = async (btn, link) => {
     }
 };
 
-window.toggleFiles = async (btn, infoHash) => {
+window.toggleFiles = async (btn, infoHash, magnetLink) => {
     const card = btn.closest('.result-card');
     const filesContainer = card.querySelector('.files-container');
     const icon = btn.querySelector('i');
@@ -385,20 +385,57 @@ window.toggleFiles = async (btn, infoHash) => {
 
     // If not loaded yet, fetch
     if (!filesContainer.dataset.loaded) {
-        filesContainer.innerHTML = '<div class="spinner-small"></div> Loading files...';
+        filesContainer.innerHTML = '<div class="spinner-small"></div> Loading files (this may take a moment)...';
 
         try {
-            const files = await fetchTorrentFiles(infoHash);
+            // First try API, then fallback to WebTorrent
+            let files = await fetchTorrentFiles(infoHash);
+
+            if (!files) {
+                console.log('Files not found in API, trying WebTorrent...');
+                filesContainer.innerHTML = '<div class="spinner-small"></div> Fetching metadata from DHT...';
+                files = await fetchFilesFromWebTorrent(magnetLink);
+            }
+
             renderFiles(files, filesContainer, title);
             filesContainer.dataset.loaded = 'true';
         } catch (error) {
             console.error('Failed to load files:', error);
-            // Fallback to showing title as file if error occurs
+            // Fallback to showing title if everything fails
             renderFiles(null, filesContainer, title);
             filesContainer.dataset.loaded = 'true';
         }
     }
 };
+
+async function fetchFilesFromWebTorrent(magnetLink) {
+    if (!window.WebTorrent) return null;
+
+    return new Promise((resolve, reject) => {
+        const client = new WebTorrent();
+        const timeout = setTimeout(() => {
+            client.destroy();
+            resolve(null);
+        }, 15000); // 15s timeout
+
+        client.add(magnetLink, (torrent) => {
+            clearTimeout(timeout);
+            const files = torrent.files.map(f => ({
+                path: f.path,
+                size: f.length
+            }));
+            client.destroy();
+            resolve(files);
+        });
+
+        client.on('error', (err) => {
+            clearTimeout(timeout);
+            client.destroy();
+            console.error("WebTorrent error:", err);
+            resolve(null);
+        });
+    });
+}
 
 async function fetchTorrentFiles(infoHash) {
     const graphqlQuery = {
@@ -464,6 +501,7 @@ function renderFiles(files, container, fallbackTitle) {
                     <span class="file-size">--</span>
                 </li>
             </ul>
+            <div class="note-text"><small>(Metadata not available yet)</small></div>
         `;
         return;
     }
