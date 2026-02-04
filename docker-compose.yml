@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      - BITMAGNET_URL=http://localhost:3333
+    restart: unless-stopped
