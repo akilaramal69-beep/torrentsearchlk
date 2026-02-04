@@ -1,11 +1,12 @@
 #!/bin/bash
-# Script to discover contentType filter options in search input
+# Test contentType filter syntax
 
-echo "Checking TorrentContentSearchQueryInput fields..."
+echo "Testing search with contentType filter..."
 echo ""
 
+# Test if contentType filter works
 curl -s -X POST http://localhost:3333/graphql \
   -H "Content-Type: application/json" \
-  -d '{"query":"{ __type(name: \"TorrentContentSearchQueryInput\") { inputFields { name type { name kind ofType { name } } } } }"}' | python3 -m json.tool
+  -d '{"query":"{ torrentContent { search(input: { queryString: \"movie\", limit: 5 }) { items { title contentType } } } }"}' | python3 -m json.tool
 
 echo -e "\n\nDone."
