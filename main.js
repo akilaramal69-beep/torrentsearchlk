@@ -368,6 +368,7 @@ window.toggleFiles = async (btn, infoHash) => {
     const card = btn.closest('.result-card');
     const filesContainer = card.querySelector('.files-container');
     const icon = btn.querySelector('i');
+    const title = card.querySelector('h3').textContent;
 
     // If already open, close it
     if (!filesContainer.classList.contains('hidden')) {
@@ -388,11 +389,13 @@ window.toggleFiles = async (btn, infoHash) => {
 
         try {
             const files = await fetchTorrentFiles(infoHash);
-            renderFiles(files, filesContainer);
+            renderFiles(files, filesContainer, title);
             filesContainer.dataset.loaded = 'true';
         } catch (error) {
             console.error('Failed to load files:', error);
-            filesContainer.innerHTML = `<div class="error-msg"><i class="fa-solid fa-exclamation-circle"></i> Failed to load files: ${error.message}</div>`;
+            // Fallback to showing title as file if error occurs
+            renderFiles(null, filesContainer, title);
+            filesContainer.dataset.loaded = 'true';
         }
     }
 };
@@ -420,36 +423,47 @@ async function fetchTorrentFiles(infoHash) {
         }
     };
 
-    const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify(graphqlQuery)
-    });
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(graphqlQuery)
+        });
 
-    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-    const data = await response.json();
-    if (data.errors) throw new Error(data.errors[0].message);
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+        const data = await response.json();
+        if (data.errors) throw new Error(data.errors[0].message);
 
-    const items = data.data?.torrentContent?.search?.items || [];
-    if (items.length === 0 || !items[0].torrent) {
-        throw new Error('Torrent metadata not found');
+        const items = data.data?.torrentContent?.search?.items || [];
+        if (items.length === 0 || !items[0].torrent) {
+            return null;
+        }
+
+        return items[0].torrent.files;
+    } catch (e) {
+        console.warn("API fetch failed, returning null", e);
+        return null;
     }
-
-    // If files is null, it typically means it hasn't been crawled yet
-    return items[0].torrent.files;
 }
 
-function renderFiles(files, container) {
+function renderFiles(files, container, fallbackTitle) {
     if (files === null) {
+        // Fallback: Assume the torrent itself is the "file" or folder
+        // Use the title as the name
+        const displayName = fallbackTitle || 'Unknown';
+        const iconClass = getFileIcon(displayName);
+
         container.innerHTML = `
-            <div class="no-files">
-                <i class="fa-solid fa-clock-rotate-left"></i>
-                <p>File list not yet indexed.</p>
-                <small>The crawler parses file lists in the background. Check back later.</small>
-            </div>
+            <ul class="file-list">
+                <li class="file-item">
+                    <i class="${iconClass}"></i>
+                    <span class="file-path" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}</span>
+                    <span class="file-size">--</span>
+                </li>
+            </ul>
         `;
         return;
     }
