@@ -51,8 +51,9 @@ async function performSearch() {
         const results = await searchTorrents(query, currentFilter);
         const endTime = performance.now();
 
-        // Client-side filtering by category
-        const filteredResults = filterByCategory(results, currentFilter);
+        // Client-side filtering: by search terms, then by category
+        const matchedResults = filterBySearchTerms(results, query);
+        const filteredResults = filterByCategory(matchedResults, currentFilter);
 
         lastResults = filteredResults;
         displayResults(sortResults(filteredResults));
@@ -181,6 +182,18 @@ function filterByCategory(results, category) {
     return results.filter(item => {
         const itemType = (item.contentType || '').toLowerCase();
         return itemType === targetType;
+    });
+}
+
+// Filter results to only include titles that contain search terms
+function filterBySearchTerms(results, searchQuery) {
+    const searchWords = searchQuery.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+    if (searchWords.length === 0) return results;
+
+    return results.filter(item => {
+        const title = (item.title || '').toLowerCase();
+        // Title must contain at least one search word
+        return searchWords.some(word => title.includes(word));
     });
 }
 
