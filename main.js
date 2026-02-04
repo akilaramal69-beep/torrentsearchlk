@@ -10,8 +10,11 @@ const resultCountSpan = document.getElementById('resultCount');
 const searchTimeSpan = document.getElementById('searchTime');
 const toast = document.getElementById('toast');
 const filterBtns = document.querySelectorAll('.filter-btn');
+const sortSelect = document.getElementById('sortSelect');
 
 let currentFilter = 'all';
+let currentSort = 'relevance';
+let lastResults = [];
 
 // Event Listeners
 searchBtn.addEventListener('click', performSearch);
@@ -30,6 +33,13 @@ filterBtns.forEach(btn => {
     });
 });
 
+sortSelect.addEventListener('change', () => {
+    currentSort = sortSelect.value;
+    if (lastResults.length > 0) {
+        displayResults(sortResults(lastResults));
+    }
+});
+
 async function performSearch() {
     const query = searchInput.value.trim();
     if (!query) return;
@@ -41,7 +51,8 @@ async function performSearch() {
         const results = await searchTorrents(query, currentFilter);
         const endTime = performance.now();
 
-        displayResults(results);
+        lastResults = results;
+        displayResults(sortResults(results));
         updateStats(results.length, Math.round(endTime - startTime));
     } catch (error) {
         console.error('Search failed:', error);
@@ -67,10 +78,11 @@ async function searchTorrents(searchTerm, category) {
         query: `
             query Search($query: String!) {
               torrentContent {
-                search(input: { queryString: $query }) {
+                search(input: { queryString: $query, limit: 100 }) {
                   items {
                     infoHash
                     title
+                    contentType
                     seeders
                     leechers
                     publishedAt
@@ -114,6 +126,37 @@ async function searchTorrents(searchTerm, category) {
     // Trying to be robust by checking paths
     const items = data.data?.torrentContent?.search?.items || [];
     return items;
+}
+
+// Sort results based on current sort selection
+function sortResults(results) {
+    const sorted = [...results];
+
+    switch (currentSort) {
+        case 'seeders_desc':
+            sorted.sort((a, b) => (b.seeders || 0) - (a.seeders || 0));
+            break;
+        case 'seeders_asc':
+            sorted.sort((a, b) => (a.seeders || 0) - (b.seeders || 0));
+            break;
+        case 'size_desc':
+            sorted.sort((a, b) => (b.torrent?.size || 0) - (a.torrent?.size || 0));
+            break;
+        case 'size_asc':
+            sorted.sort((a, b) => (a.torrent?.size || 0) - (b.torrent?.size || 0));
+            break;
+        case 'date_desc':
+            sorted.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+            break;
+        case 'date_asc':
+            sorted.sort((a, b) => new Date(a.publishedAt) - new Date(b.publishedAt));
+            break;
+        default:
+            // relevance - keep original order
+            break;
+    }
+
+    return sorted;
 }
 
 function displayResults(results) {

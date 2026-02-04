@@ -30,11 +30,25 @@
                 </div>
             </div>
             <div class="filters">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="video">Video</button>
-                <button class="filter-btn" data-filter="audio">Audio</button>
-                <button class="filter-btn" data-filter="application">Apps</button>
-                <button class="filter-btn" data-filter="game">Games</button>
+                <button class="filter-btn active" data-filter="all"><i class="fa-solid fa-globe"></i> All</button>
+                <button class="filter-btn" data-filter="movie"><i class="fa-solid fa-film"></i> Movies</button>
+                <button class="filter-btn" data-filter="tv_show"><i class="fa-solid fa-tv"></i> TV Shows</button>
+                <button class="filter-btn" data-filter="music"><i class="fa-solid fa-music"></i> Music</button>
+                <button class="filter-btn" data-filter="software"><i class="fa-solid fa-code"></i> Software</button>
+                <button class="filter-btn" data-filter="game"><i class="fa-solid fa-gamepad"></i> Games</button>
+                <button class="filter-btn" data-filter="book"><i class="fa-solid fa-book"></i> Books</button>
+            </div>
+            <div class="sort-container">
+                <label for="sortSelect"><i class="fa-solid fa-arrow-down-wide-short"></i> Sort by:</label>
+                <select id="sortSelect">
+                    <option value="relevance">Relevance</option>
+                    <option value="seeders_desc">Seeders (High to Low)</option>
+                    <option value="seeders_asc">Seeders (Low to High)</option>
+                    <option value="size_desc">Size (Largest)</option>
+                    <option value="size_asc">Size (Smallest)</option>
+                    <option value="date_desc">Date (Newest)</option>
+                    <option value="date_asc">Date (Oldest)</option>
+                </select>
             </div>
         </header>
 
@@ -65,7 +79,7 @@
     <!-- Magnet Link Toast -->
     <div id="toast" class="toast hidden">Magnet link copied to clipboard!</div>
 
-    <script type="module" src="main.js?v=4"></script>
+    <script type="module" src="main.js?v=5"></script>
 </body>
 
 </html>
